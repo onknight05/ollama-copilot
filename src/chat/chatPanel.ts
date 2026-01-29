@@ -113,10 +113,6 @@ export class ChatPanel {
             storage.conversations.forEach(conv => {
                 this.conversations.set(conv.id, conv);
             });
-            this.currentConversationId = storage.currentConversationId;
-            if (this.currentConversationId && this.conversations.has(this.currentConversationId)) {
-                this.chatHistory = this.conversations.get(this.currentConversationId)!.messages;
-            }
         }
     }
 
