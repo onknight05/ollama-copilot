@@ -53,6 +53,10 @@
       {
         "command": "ollama.disableAutocomplete",
         "title": "Ollama Copilot: Disable Completions"
+      },
+      {
+        "command": "ollama.refreshModels",
+        "title": "Ollama Copilot: Refresh Models"
       }
     ],
     "submenus": [

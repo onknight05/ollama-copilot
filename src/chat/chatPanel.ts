@@ -26,15 +26,19 @@ export class ChatPanel {
     private chatHistory: OllamaChatMessage[] = [];
     private currentConversationId: string | null = null;
     private conversations: Map<string, Conversation> = new Map();
+    private availableModels: string[] = [];
+    private currentModel: string;
 
     public static createOrShow(
         extensionUri: vscode.Uri,
         ollamaClient: OllamaClient,
-        context: vscode.ExtensionContext
+        context: vscode.ExtensionContext,
+        availableModels: string[] = []
     ) {
         const column = vscode.ViewColumn.Beside;
 
         if (ChatPanel.currentPanel) {
+            ChatPanel.currentPanel.updateModels(availableModels);
             ChatPanel.currentPanel._panel.reveal(column);
             return;
         }
@@ -56,19 +60,34 @@ export class ChatPanel {
         // Set panel icon
         panel.iconPath = vscode.Uri.joinPath(extensionUri, 'resources', 'icon.svg');
 
-        ChatPanel.currentPanel = new ChatPanel(panel, extensionUri, ollamaClient, context);
+        ChatPanel.currentPanel = new ChatPanel(panel, extensionUri, ollamaClient, context, availableModels);
+    }
+
+    public updateModels(models: string[]) {
+        this.availableModels = models;
+        this._panel.webview.postMessage({
+            type: 'modelsUpdated',
+            models: this.availableModels,
+            currentModel: this.currentModel
+        });
     }
 
     private constructor(
         panel: vscode.WebviewPanel,
         extensionUri: vscode.Uri,
         ollamaClient: OllamaClient,
-        context: vscode.ExtensionContext
+        context: vscode.ExtensionContext,
+        availableModels: string[] = []
     ) {
         this._panel = panel;
         this._extensionUri = extensionUri;
         this.ollamaClient = ollamaClient;
         this.context = context;
+        this.availableModels = availableModels;
+
+        // Get current model from settings
+        const config = vscode.workspace.getConfiguration('ollama-copilot');
+        this.currentModel = config.get<string>('chatModel') || 'codellama';
 
         this.loadConversationsFromStorage();
         this._update();
@@ -96,6 +115,12 @@ export class ChatPanel {
                     case 'getConversations':
                         this.sendConversationsList();
                         break;
+                    case 'changeModel':
+                        this.handleModelChange(data.model);
+                        break;
+                    case 'getModels':
+                        this.sendModelsList();
+                        break;
                 }
             },
             null,
@@ -105,6 +130,21 @@ export class ChatPanel {
 
     private generateId(): string {
         return Date.now().toString(36) + Math.random().toString(36).substring(2);
+    }
+
+    private handleModelChange(model: string): void {
+        this.currentModel = model;
+        // Optionally save to settings
+        const config = vscode.workspace.getConfiguration('ollama-copilot');
+        config.update('chatModel', model, vscode.ConfigurationTarget.Global);
+    }
+
+    private sendModelsList(): void {
+        this._panel.webview.postMessage({
+            type: 'modelsList',
+            models: this.availableModels,
+            currentModel: this.currentModel
+        });
     }
 
     private loadConversationsFromStorage(): void {
@@ -243,16 +283,20 @@ export class ChatPanel {
 
         try {
             const config = vscode.workspace.getConfiguration('ollama-copilot');
-            const chatModel = config.get<string>('chatModel') || 'codellama';
             const temperature = config.get<number>('temperature') || 0.2;
-
+            // console.log('Sending Ollama chat request with model:', this.currentModel);
             const response = await this.ollamaClient.chat({
-                model: chatModel,
+                model: this.currentModel,
                 messages: this.chatHistory,
                 options: {
                     temperature,
                 },
             });
+            if (response.content) {
+                // remove extra newlines, trim spaces
+                response.content = response.content.replace(/\n{3,}/g, '\n\n').trim();
+            }
+            // console.log('Ollama chat response:', response);
 
             this.chatHistory.push(response);
             this.saveConversationsToStorage();
@@ -315,6 +359,7 @@ export class ChatPanel {
         setTimeout(() => {
             this.sendConversationsList();
             this.sendCurrentMessages();
+            this.sendModelsList();
         }, 100);
     }
 
@@ -532,20 +577,20 @@ export class ChatPanel {
         #chat-container {
             flex: 1;
             overflow-y: auto;
-            padding: 16px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 10px;
         }
         #chat-container.hidden {
             display: none;
         }
         .message {
-            padding: 12px 16px;
-            border-radius: 12px;
+            padding: 8px 12px;
+            border-radius: 10px;
             max-width: 85%;
             word-wrap: break-word;
-            line-height: 1.5;
+            line-height: 1.4;
         }
         .user-message {
             align-self: flex-end;
@@ -648,6 +693,11 @@ export class ChatPanel {
             padding-right: 8px;
             border-top: 1px solid var(--vscode-panel-border, #3c3c3c);
         }
+        .input-actions-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
         .action-btn {
             width: 24px;
             height: 24px;
@@ -695,6 +745,33 @@ export class ChatPanel {
         #send-btn svg {
             width: 12px;
             height: 12px;
+        }
+
+        /* Model selector */
+        .model-selector {
+            display: flex;
+            align-items: center;
+        }
+        #model-select {
+            background: transparent;
+            border: none;
+            color: var(--vscode-descriptionForeground);
+            font-size: 12px;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 4px;
+        }
+        #model-select:hover {
+            background: var(--vscode-list-hoverBackground);
+            color: var(--vscode-foreground);
+        }
+        #model-select:focus {
+            outline: none;
+            background: var(--vscode-list-hoverBackground);
+        }
+        #model-select option {
+            background: var(--vscode-dropdown-background);
+            color: var(--vscode-dropdown-foreground);
         }
 
         /* Code blocks */
@@ -754,17 +831,26 @@ export class ChatPanel {
         <div class="input-container">
             <textarea id="message-input" placeholder="Ask anything..." rows="1"></textarea>
             <div class="input-actions">
-                <button id="attach-btn" class="action-btn" title="Attach file">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-                    </svg>
-                </button>
-                <button id="send-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="22" y1="2" x2="11" y2="13"></line>
-                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                    </svg>
-                </button>
+                <div class="input-actions-left">
+                </div>
+                <div class="input-actions-right">
+                    <button id="attach-btn" class="action-btn" title="Attach file">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                        </svg>
+                    </button>
+                    <div class="model-selector">
+                        <select id="model-select" title="Select model">
+                            <option value="">Loading models...</option>
+                        </select>
+                    </div>
+                    <button id="send-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -782,9 +868,12 @@ export class ChatPanel {
         const currentConversationTitle = document.getElementById('current-conversation-title');
         const newChatBtn = document.getElementById('new-chat-btn');
         const noConversations = document.getElementById('no-conversations');
+        const modelSelect = document.getElementById('model-select');
 
         let conversations = [];
         let currentConversationId = null;
+        let availableModels = [];
+        let currentModel = '';
 
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -873,6 +962,54 @@ export class ChatPanel {
             }
         }
 
+        function resizeModelSelect() {
+            const selectedText = modelSelect.options[modelSelect.selectedIndex]?.text || '';
+            const tempSpan = document.createElement('span');
+            tempSpan.style.visibility = 'hidden';
+            tempSpan.style.position = 'absolute';
+            tempSpan.style.fontSize = '12px';
+            tempSpan.style.fontFamily = 'var(--vscode-font-family)';
+            tempSpan.style.whiteSpace = 'nowrap';
+            tempSpan.textContent = selectedText;
+            document.body.appendChild(tempSpan);
+            const calculatedWidth = tempSpan.offsetWidth + 32;
+            modelSelect.style.width = Math.max(calculatedWidth, 60) + 'px';
+            document.body.removeChild(tempSpan);
+        }
+
+        function updateModelsList(models, current) {
+            availableModels = models;
+            currentModel = current;
+
+            modelSelect.innerHTML = '';
+
+            if (models.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No models';
+                modelSelect.appendChild(option);
+            } else {
+                models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model;
+                    option.textContent = model;
+                    if (model === current) {
+                        option.selected = true;
+                    }
+                    modelSelect.appendChild(option);
+                });
+            }
+            resizeModelSelect();
+        }
+
+        modelSelect.addEventListener('change', (e) => {
+            const selectedModel = e.target.value;
+            if (selectedModel) {
+                vscode.postMessage({ type: 'changeModel', model: selectedModel });
+            }
+            resizeModelSelect();
+        });
+
         messageInput.addEventListener('input', () => {
             messageInput.style.height = 'auto';
             messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
@@ -937,10 +1074,15 @@ export class ChatPanel {
                     }
                     updateEmptyState();
                     break;
+                case 'modelsList':
+                case 'modelsUpdated':
+                    updateModelsList(message.models, message.currentModel);
+                    break;
             }
         });
 
         vscode.postMessage({ type: 'getConversations' });
+        vscode.postMessage({ type: 'getModels' });
 
         messageInput.focus();
     </script>

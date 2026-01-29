@@ -8,6 +8,7 @@ import { ChatPanel } from './chat/chatPanel';
 
 let ollamaClient: OllamaClient;
 let statusBarItem: vscode.StatusBarItem;
+let availableModels: string[] = [];
 
 function updateStatusBar() {
     const config = vscode.workspace.getConfiguration('ollama-copilot');
@@ -23,6 +24,61 @@ function updateStatusBar() {
     statusBarItem.show();
 }
 
+async function loadAndValidateModels() {
+    try {
+        availableModels = (await ollamaClient.listModels()).map(model => model.replace(":latest", ""));
+
+        if (availableModels.length === 0) {
+            vscode.window.showWarningMessage(
+                'No Ollama models found. Please pull a model using "ollama pull <model>".'
+            );
+            return;
+        }
+
+        const config = vscode.workspace.getConfiguration('ollama-copilot');
+        const completionModel = config.get<string>('model') || 'codellama';
+        const chatModel = config.get<string>('chatModel') || 'codellama';
+
+        // Validate completion model
+        if (!availableModels.includes(completionModel)) {
+            const selection = await vscode.window.showWarningMessage(
+                `Completion model "${completionModel}" not found. Available: ${availableModels.slice(0, 3).join(', ')}${availableModels.length > 3 ? '...' : ''}`,
+                'Select Model',
+                'Ignore'
+            );
+            if (selection === 'Select Model') {
+                const selected = await vscode.window.showQuickPick(availableModels, {
+                    placeHolder: 'Select completion model'
+                });
+                if (selected) {
+                    await config.update('model', selected, vscode.ConfigurationTarget.Global);
+                }
+            }
+        }
+
+        // Validate chat model
+        if (!availableModels.includes(chatModel)) {
+            const selection = await vscode.window.showWarningMessage(
+                `Chat model "${chatModel}" not found. Available: ${availableModels.slice(0, 3).join(', ')}${availableModels.length > 3 ? '...' : ''}`,
+                'Select Model',
+                'Ignore'
+            );
+            if (selection === 'Select Model') {
+                const selected = await vscode.window.showQuickPick(availableModels, {
+                    placeHolder: 'Select chat model'
+                });
+                if (selected) {
+                    await config.update('chatModel', selected, vscode.ConfigurationTarget.Global);
+                }
+            }
+        }
+
+        console.log(`Ollama models loaded: ${availableModels.join(', ')}`);
+    } catch (error) {
+        console.error('Failed to load Ollama models:', error);
+    }
+}
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -35,6 +91,9 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push({
         dispose: () => ollamaClient.dispose()
     });
+
+    // Load and validate models
+    loadAndValidateModels();
 
     // Register inline completion provider
     const completionProvider = new OllamaCompletionProvider(ollamaClient);
@@ -60,7 +119,14 @@ export function activate(context: vscode.ExtensionContext) {
     // Register commands
     context.subscriptions.push(
         vscode.commands.registerCommand('ollama.openChat', () => {
-            ChatPanel.createOrShow(context.extensionUri, ollamaClient, context);
+            ChatPanel.createOrShow(context.extensionUri, ollamaClient, context, availableModels);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ollama.refreshModels', async () => {
+            await loadAndValidateModels();
+            vscode.window.showInformationMessage(`Found ${availableModels.length} models`);
         })
     );
 
@@ -154,17 +220,30 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    // Show welcome message
-    vscode.window.showInformationMessage(
-        'Ollama Copilot activated! Make sure Ollama is running on your system.',
-        'Open Chat',
-        'Settings'
-    ).then(selection => {
-        if (selection === 'Open Chat') {
-            vscode.commands.executeCommand('ollama.openChat');
-        } else if (selection === 'Settings') {
-            vscode.commands.executeCommand('workbench.action.openSettings', 'ollama');
-        }
+    // ping Ollama server to check availability
+    ollamaClient.ping().then(() => {
+        // Show welcome message
+        vscode.window.showInformationMessage(
+            'Ollama Copilot activated! Make sure Ollama is running on your system.',
+            'Open Chat',
+            'Settings'
+        ).then(selection => {
+            if (selection === 'Open Chat') {
+                vscode.commands.executeCommand('ollama.openChat');
+            } else if (selection === 'Settings') {
+                vscode.commands.executeCommand('workbench.action.openSettings', 'ollama');
+            }
+        });
+    }).catch(err => {
+        vscode.window.showErrorMessage(
+            'Failed to connect to Ollama server. Please ensure Ollama is running on your system.',
+            'Learn More'
+        ).then(selection => {
+            if (selection === 'Learn More') {
+                vscode.env.openExternal(vscode.Uri.parse('https://ollama.com/docs/getting-started/installation'));
+            }
+        });
+        console.error('Ollama server is not reachable:', err);
     });
 }
 

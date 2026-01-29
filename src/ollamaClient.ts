@@ -62,6 +62,13 @@ export class OllamaClient {
         });
     }
 
+    public async ping(): Promise<boolean> {
+        return this.client
+            .get('/api/ping')
+            .then(() => true)
+            .catch(() => false);
+    }
+
     public dispose() {
         this.disposable?.dispose();
     }
@@ -95,17 +102,28 @@ export class OllamaClient {
 
     async chat(request: OllamaChatRequest, signal?: AbortSignal): Promise<OllamaChatMessage> {
         try {
+            if (request.messages && request.messages.length === 1) {
+                // append system message with current time
+                request.messages.push({
+                    role: 'system',
+                    content: `Current local time: ${new Date().toLocaleString()}, ISO time: ${new Date().toISOString()}`,
+                });
+            }
+            // console.log('Ollama chat request model:', request.model, 'messages:', request.messages);
+            const payload = { ...request, stream: false };
+            // console.log('Ollama chat request payload:', payload);
+            if (request.model.includes('cloud')) {
+                delete payload.options;
+            }
             const response = await this.client.post<OllamaChatResponse>(
                 '/api/chat',
-                {
-                    ...request,
-                    stream: false,
-                },
+                payload,
                 { signal }
             );
             return response.data.message;
         } catch (error) {
             if (axios.isAxiosError(error)) {
+                console.error('Axios error in chat:', error);
                 if (error.code === 'ECONNREFUSED') {
                     throw new Error('Unable to connect to Ollama. Please ensure Ollama is running.');
                 }
