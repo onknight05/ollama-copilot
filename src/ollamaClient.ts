@@ -126,6 +126,8 @@ export class OllamaClient {
                 console.error('Axios error in chat:', error);
                 if (error.code === 'ECONNREFUSED') {
                     throw new Error('Unable to connect to Ollama. Please ensure Ollama is running.');
+                } else if (error.name === 'CanceledError') {
+                    throw error; // propagate abort errors
                 }
                 throw new Error(`Ollama API error: ${error.message}`);
             }

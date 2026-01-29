@@ -28,6 +28,7 @@ export class ChatPanel {
     private conversations: Map<string, Conversation> = new Map();
     private availableModels: string[] = [];
     private currentModel: string;
+    private abortController?: AbortController;
 
     public static createOrShow(
         extensionUri: vscode.Uri,
@@ -121,6 +122,9 @@ export class ChatPanel {
                     case 'getModels':
                         this.sendModelsList();
                         break;
+                    case 'abortChat':
+                        this.handleAbortChat();
+                        break;
                 }
             },
             null,
@@ -145,6 +149,13 @@ export class ChatPanel {
             models: this.availableModels,
             currentModel: this.currentModel
         });
+    }
+
+    private handleAbortChat(): void {
+        if (this.abortController) {
+            this.abortController.abort();
+            this.abortController = undefined;
+        }
     }
 
     private loadConversationsFromStorage(): void {
@@ -282,6 +293,9 @@ export class ChatPanel {
         });
 
         try {
+            // Create abort controller for this request
+            this.abortController = new AbortController();
+
             const config = vscode.workspace.getConfiguration('ollama-copilot');
             const temperature = config.get<number>('temperature') || 0.2;
             // console.log('Sending Ollama chat request with model:', this.currentModel);
@@ -291,7 +305,7 @@ export class ChatPanel {
                 options: {
                     temperature,
                 },
-            });
+            }, this.abortController.signal);
             if (response.content) {
                 // remove extra newlines, trim spaces
                 response.content = response.content.replace(/\n{3,}/g, '\n\n').trim();
@@ -308,12 +322,24 @@ export class ChatPanel {
 
             this.sendConversationsList();
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-            this._panel.webview.postMessage({
-                type: 'error',
-                message: errorMessage,
-            });
+            // Check if this was an abort
+            // console.error('Error during chat request:', error);
+            if (error instanceof Error && error.name === 'CanceledError') {
+                // console.log('Chat request was aborted by user');
+                // Request was aborted by user, remove the pending user message from history
+                this.chatHistory.pop();
+                this._panel.webview.postMessage({
+                    type: 'aborted',
+                });
+            } else {
+                const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+                this._panel.webview.postMessage({
+                    type: 'error',
+                    message: errorMessage,
+                });
+            }
         } finally {
+            this.abortController = undefined;
             this._panel.webview.postMessage({
                 type: 'loading',
                 isLoading: false,
@@ -746,6 +772,31 @@ export class ChatPanel {
             width: 12px;
             height: 12px;
         }
+        #send-btn.hidden, #stop-btn.hidden {
+            display: none;
+        }
+        #stop-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: var(--vscode-errorForeground, #f14c4c);
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        #stop-btn:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
+        }
+        #stop-btn svg {
+            width: 10px;
+            height: 10px;
+        }
 
         /* Model selector */
         .model-selector {
@@ -850,6 +901,11 @@ export class ChatPanel {
                             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                         </svg>
                     </button>
+                    <button id="stop-btn" class="hidden" title="Stop generation">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="6" y="6" width="12" height="12" rx="1"></rect>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>
@@ -869,10 +925,12 @@ export class ChatPanel {
         const newChatBtn = document.getElementById('new-chat-btn');
         const noConversations = document.getElementById('no-conversations');
         const modelSelect = document.getElementById('model-select');
+        const stopBtn = document.getElementById('stop-btn');
 
         let conversations = [];
         let currentConversationId = null;
         let availableModels = [];
+        let isLoading = false;
         let currentModel = '';
 
         function escapeHtml(text) {
@@ -1017,6 +1075,10 @@ export class ChatPanel {
 
         sendBtn.addEventListener('click', sendMessage);
 
+        stopBtn.addEventListener('click', () => {
+            vscode.postMessage({ type: 'abortChat' });
+        });
+
         messageInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -1053,10 +1115,26 @@ export class ChatPanel {
                 case 'error':
                     addMessage(message.message, 'error');
                     break;
+                case 'aborted':
+                    // Remove the last user message from UI since request was aborted
+                    const lastMessage = chatContainer.lastElementChild;
+                    if (lastMessage && lastMessage.classList.contains('user-message')) {
+                        lastMessage.remove();
+                        updateEmptyState();
+                    }
+                    break;
                 case 'loading':
+                    isLoading = message.isLoading;
                     loading.className = message.isLoading ? 'active' : '';
-                    sendBtn.disabled = message.isLoading;
                     messageInput.disabled = message.isLoading;
+                    // Toggle send/stop button visibility
+                    if (message.isLoading) {
+                        sendBtn.classList.add('hidden');
+                        stopBtn.classList.remove('hidden');
+                    } else {
+                        sendBtn.classList.remove('hidden');
+                        stopBtn.classList.add('hidden');
+                    }
                     break;
                 case 'clearMessages':
                     chatContainer.innerHTML = '';
