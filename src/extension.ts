@@ -35,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     // Register chat view provider
-    chatViewProvider = new ChatViewProvider(context.extensionUri, ollamaClient);
+    chatViewProvider = new ChatViewProvider(context.extensionUri, ollamaClient, context);
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
             ChatViewProvider.viewType,
@@ -63,6 +63,12 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('ollama.clearChat', () => {
             chatViewProvider.clearChat();
             vscode.window.showInformationMessage('Chat history cleared');
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ollama.newConversation', () => {
+            chatViewProvider.newConversation();
         })
     );
 

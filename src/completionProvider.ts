@@ -71,9 +71,10 @@ export class OllamaCompletionProvider implements vscode.InlineCompletionItemProv
             // Get configuration
             const config = vscode.workspace.getConfiguration('ollama');
             const model = config.get<string>('model') || 'codellama';
-            const maxTokens = config.get<number>('maxTokens') || 100;
+            const maxTokens = config.get<number>('maxTokens') || 10000;
             const temperature = config.get<number>('temperature') || 0.2;
 
+            // console.log(`[${model}] Before: `, textBeforeCursor);
             // Create the prompt
             const prompt = this.createPrompt(document, textBeforeCursor);
 
@@ -120,7 +121,7 @@ export class OllamaCompletionProvider implements vscode.InlineCompletionItemProv
 
     private createPrompt(document: vscode.TextDocument, textBeforeCursor: string): string {
         const languageId = document.languageId;
-        
+
         // Create a context-aware prompt
         return `Complete the following ${languageId} code. Only provide the continuation, do not repeat the existing code:\n\n${textBeforeCursor}`;
     }
