@@ -1,8 +1,9 @@
 {
-  "name": "ollama-copilot",
-  "displayName": "Ollama Copilot",
-  "description": "Ollama Copilot for VS Code: Harness the power of Ollama with autocomplete and chat without leaving VS Code",
-  "version": "0.0.1",
+  "name": "ollama-copilot-vscode",
+  "displayName": "Ollama Copilot VS Code",
+  "description": "Ollama Copilot: Harness the power of Ollama with autocomplete and chat without leaving VS Code",
+  "icon": "resources/ollama.png",
+  "version": "1.0.0",
   "publisher": "namdang",
   "license": "MIT",
   "bugs": {
@@ -13,7 +14,7 @@
     "url": "https://github.com/onknight05/ollama-copilot"
   },
   "engines": {
-    "vscode": "^1.70.0"
+    "vscode": "^1.85.0"
   },
   "categories": [
     "Programming Languages",

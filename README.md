@@ -1,4 +1,23 @@
-# Ollama Copilot
+# Ollama Copilot for VS Code
+
+<p align="center">
+  <img src="resources/ollama.png" alt="VSCode Ollama Logo" width="128"/>
+</p>
+
+<p align="center">
+  <a href="https://marketplace.visualstudio.com/items?itemName=namdang.ollama-copilot-vscode">
+    <img src="https://img.shields.io/visual-studio-marketplace/i/namdang.ollama-copilot-vscode?logo=visual-studio-code" alt="Downloads"/>
+  </a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=namdang.ollama-copilot-vscode">
+    <img src="https://img.shields.io/visual-studio-marketplace/r/namdang.ollama-copilot-vscode?logo=visual-studio-code" alt="Rating"/>
+  </a>
+  <a href="https://github.com/onknight05/ollama-copilot">
+    <img src="https://img.shields.io/github/stars/onknight05/ollama-copilot" alt="GitHub stars"/>
+  </a>
+  <a href="https://github.com/onknight05/ollama-copilot/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"/>
+  </a>
+</p>
 
 Ollama Copilot for VS Code: Harness the power of Ollama with autocomplete and chat without leaving VS Code
 
