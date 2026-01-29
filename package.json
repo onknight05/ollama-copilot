@@ -3,7 +3,7 @@
   "displayName": "Ollama Copilot VS Code",
   "description": "Ollama Copilot: Harness the power of Ollama with autocomplete and chat without leaving VS Code",
   "icon": "resources/ollama.png",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "namdang",
   "license": "MIT",
   "bugs": {
@@ -141,24 +141,27 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run package",
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "package": "node esbuild.js --production",
+    "compile-tests": "tsc -p ./",
     "lint": "eslint src --ext ts",
-    "pretest": "npm run compile && npm run lint",
+    "pretest": "npm run compile-tests && npm run lint",
     "test": "vscode-test"
   },
   "devDependencies": {
+    "@types/mocha": "^10.0.10",
     "@types/node": "^18.0.0",
     "@types/vscode": "^1.70.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.27.2",
     "eslint": "^9.39.2",
     "typescript": "^5.9.3",
-    "@types/mocha": "^10.0.10",
-    "typescript-eslint": "^8.52.0",
-    "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2"
+    "typescript-eslint": "^8.52.0"
   },
   "dependencies": {
     "axios": "^1.12.0"

@@ -21,6 +21,8 @@
 
 Ollama Copilot for VS Code: Harness the power of Ollama with autocomplete and chat without leaving VS Code
 
+![example](resources/example.gif)
+
 ## Features
 
 ### 🚀 Intelligent Code Autocomplete
