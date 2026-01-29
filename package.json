@@ -32,12 +32,24 @@
     "commands": [
       {
         "command": "ollama.openChat",
-        "title": "Ollama: Open Chat",
+        "title": "Ollama: Open Chat (Panel)",
+        "icon": {
+          "light": "resources/icon.svg",
+          "dark": "resources/icon.svg"
+        }
+      },
+      {
+        "command": "ollama.openChatSidebar",
+        "title": "Ollama: Open Chat (Sidebar)",
         "icon": "$(comment-discussion)"
       },
       {
         "command": "ollama.clearChat",
         "title": "Ollama: Clear Chat History"
+      },
+      {
+        "command": "ollama.newConversation",
+        "title": "Ollama: New Conversation"
       },
       {
         "command": "ollama.toggleAutocomplete",
@@ -59,6 +71,15 @@
           "type": "webview",
           "id": "ollama-chat-view",
           "name": "Chat"
+        }
+      ]
+    },
+    "menus": {
+      "editor/title": [
+        {
+          "command": "ollama.openChat",
+          "group": "navigation",
+          "when": "editorFocus"
         }
       ]
     },

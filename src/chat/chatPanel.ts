@@ -14,24 +14,93 @@ interface ConversationStorage {
     currentConversationId: string | null;
 }
 
-export class ChatViewProvider implements vscode.WebviewViewProvider {
-    public static readonly viewType = 'ollama-chat-view';
+export class ChatPanel {
+    public static currentPanel: ChatPanel | undefined;
+    public static readonly viewType = 'ollama-chat-panel';
 
-    private _view?: vscode.WebviewView;
+    private readonly _panel: vscode.WebviewPanel;
+    private readonly _extensionUri: vscode.Uri;
+    private _disposables: vscode.Disposable[] = [];
     private ollamaClient: OllamaClient;
-    private chatHistory: OllamaChatMessage[] = [];
     private context: vscode.ExtensionContext;
+    private chatHistory: OllamaChatMessage[] = [];
     private currentConversationId: string | null = null;
     private conversations: Map<string, Conversation> = new Map();
 
-    constructor(
-        private readonly _extensionUri: vscode.Uri,
+    public static createOrShow(
+        extensionUri: vscode.Uri,
         ollamaClient: OllamaClient,
         context: vscode.ExtensionContext
     ) {
+        const column = vscode.ViewColumn.Beside;
+
+        if (ChatPanel.currentPanel) {
+            ChatPanel.currentPanel._panel.reveal(column);
+            return;
+        }
+
+        const panel = vscode.window.createWebviewPanel(
+            ChatPanel.viewType,
+            `Ollama Chat`,
+            {
+                viewColumn: column,
+                preserveFocus: true
+            },
+            {
+                enableScripts: true,
+                localResourceRoots: [extensionUri],
+                retainContextWhenHidden: true
+            }
+        );
+
+        // Set panel icon
+        panel.iconPath = vscode.Uri.joinPath(extensionUri, 'resources', 'icon.svg');
+
+        ChatPanel.currentPanel = new ChatPanel(panel, extensionUri, ollamaClient, context);
+    }
+
+    private constructor(
+        panel: vscode.WebviewPanel,
+        extensionUri: vscode.Uri,
+        ollamaClient: OllamaClient,
+        context: vscode.ExtensionContext
+    ) {
+        this._panel = panel;
+        this._extensionUri = extensionUri;
         this.ollamaClient = ollamaClient;
         this.context = context;
+
         this.loadConversationsFromStorage();
+        this._update();
+
+        this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+
+        this._panel.webview.onDidReceiveMessage(
+            async (data) => {
+                switch (data.type) {
+                    case 'sendMessage':
+                        await this.handleUserMessage(data.message);
+                        break;
+                    case 'clearChat':
+                        this.clearChat();
+                        break;
+                    case 'newConversation':
+                        this.handleNewConversation();
+                        break;
+                    case 'switchConversation':
+                        this.handleSwitchConversation(data.id);
+                        break;
+                    case 'deleteConversation':
+                        this.handleDeleteConversation(data.id);
+                        break;
+                    case 'getConversations':
+                        this.sendConversationsList();
+                        break;
+                }
+            },
+            null,
+            this._disposables
+        );
     }
 
     private generateId(): string {
@@ -105,58 +174,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         return Array.from(this.conversations.values()).sort((a, b) => b.updatedAt - a.updatedAt);
     }
 
-    public resolveWebviewView(
-        webviewView: vscode.WebviewView,
-        context: vscode.WebviewViewResolveContext,
-        _token: vscode.CancellationToken
-    ) {
-        this._view = webviewView;
-
-        webviewView.webview.options = {
-            enableScripts: true,
-            localResourceRoots: [this._extensionUri],
-        };
-
-        webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
-
-        webviewView.webview.onDidReceiveMessage(async (data) => {
-            switch (data.type) {
-                case 'sendMessage':
-                    await this.handleUserMessage(data.message);
-                    break;
-                case 'clearChat':
-                    this.clearChat();
-                    break;
-                case 'newConversation':
-                    this.handleNewConversation();
-                    break;
-                case 'switchConversation':
-                    this.handleSwitchConversation(data.id);
-                    break;
-                case 'deleteConversation':
-                    this.handleDeleteConversation(data.id);
-                    break;
-                case 'getConversations':
-                    this.sendConversationsList();
-                    break;
-            }
-        });
-
-        // Send initial data
-        this.sendConversationsList();
-        this.sendCurrentMessages();
-    }
-
     private handleNewConversation(): void {
         const conversation = this.createNewConversation();
         this.sendConversationsList();
-        if (this._view) {
-            this._view.webview.postMessage({
-                type: 'conversationChanged',
-                conversationId: conversation.id,
-                messages: []
-            });
-        }
+        this._panel.webview.postMessage({
+            type: 'conversationChanged',
+            conversationId: conversation.id,
+            messages: []
+        });
     }
 
     private handleSwitchConversation(id: string): void {
@@ -168,81 +193,63 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private handleDeleteConversation(id: string): void {
         this.deleteConversation(id);
         this.sendConversationsList();
-        if (this._view) {
-            this._view.webview.postMessage({
-                type: 'conversationChanged',
-                conversationId: this.currentConversationId,
-                messages: this.chatHistory.map(m => ({ role: m.role, content: m.content }))
-            });
-        }
+        this._panel.webview.postMessage({
+            type: 'conversationChanged',
+            conversationId: this.currentConversationId,
+            messages: this.chatHistory.map(m => ({ role: m.role, content: m.content }))
+        });
     }
 
     private sendConversationsList(): void {
-        if (this._view) {
-            this._view.webview.postMessage({
-                type: 'conversationsList',
-                conversations: this.getConversationsList(),
-                currentId: this.currentConversationId
-            });
-        }
+        this._panel.webview.postMessage({
+            type: 'conversationsList',
+            conversations: this.getConversationsList(),
+            currentId: this.currentConversationId
+        });
     }
 
     private sendCurrentMessages(): void {
-        if (this._view) {
-            this._view.webview.postMessage({
-                type: 'conversationChanged',
-                conversationId: this.currentConversationId,
-                messages: this.chatHistory.map(m => ({ role: m.role, content: m.content }))
-            });
-        }
+        this._panel.webview.postMessage({
+            type: 'conversationChanged',
+            conversationId: this.currentConversationId,
+            messages: this.chatHistory.map(m => ({ role: m.role, content: m.content }))
+        });
     }
 
     private async handleUserMessage(message: string) {
-        if (!this._view) {
-            return;
-        }
-
-        // Create new conversation if none exists
         if (!this.currentConversationId) {
             this.createNewConversation();
             this.sendConversationsList();
         }
 
-        // Add user message to history
         const userMessage: OllamaChatMessage = {
             role: 'user',
             content: message,
         };
         this.chatHistory.push(userMessage);
 
-        // Update conversation title with first message
         this.updateConversationTitle(message);
 
-        // Update conversation timestamp
         if (this.currentConversationId && this.conversations.has(this.currentConversationId)) {
             this.conversations.get(this.currentConversationId)!.updatedAt = Date.now();
             this.saveConversationsToStorage();
         }
 
-        // Display user message
-        this._view.webview.postMessage({
+        this._panel.webview.postMessage({
             type: 'userMessage',
             message: message,
         });
 
-        // Show loading indicator
-        this._view.webview.postMessage({
+        this._panel.webview.postMessage({
             type: 'loading',
             isLoading: true,
         });
 
         try {
-            // Get configuration
             const config = vscode.workspace.getConfiguration('ollama');
             const chatModel = config.get<string>('chatModel') || 'codellama';
             const temperature = config.get<number>('temperature') || 0.2;
 
-            // Call Ollama API
             const response = await this.ollamaClient.chat({
                 model: chatModel,
                 messages: this.chatHistory,
@@ -251,30 +258,23 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 },
             });
 
-            // Add assistant response to history
             this.chatHistory.push(response);
-
-            // Save to storage
             this.saveConversationsToStorage();
 
-            // Display assistant message
-            this._view.webview.postMessage({
+            this._panel.webview.postMessage({
                 type: 'assistantMessage',
                 message: response.content,
             });
 
-            // Update conversations list (title may have changed)
             this.sendConversationsList();
         } catch (error) {
-            // Display error message
             const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-            this._view.webview.postMessage({
+            this._panel.webview.postMessage({
                 type: 'error',
                 message: errorMessage,
             });
         } finally {
-            // Hide loading indicator
-            this._view.webview.postMessage({
+            this._panel.webview.postMessage({
                 type: 'loading',
                 isLoading: false,
             });
@@ -289,16 +289,37 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             conv.title = 'New Conversation';
             this.saveConversationsToStorage();
         }
-        if (this._view) {
-            this._view.webview.postMessage({
-                type: 'clearMessages',
-            });
-            this.sendConversationsList();
-        }
+        this._panel.webview.postMessage({
+            type: 'clearMessages',
+        });
+        this.sendConversationsList();
     }
 
     public newConversation() {
         this.handleNewConversation();
+    }
+
+    public dispose() {
+        ChatPanel.currentPanel = undefined;
+
+        this._panel.dispose();
+
+        while (this._disposables.length) {
+            const x = this._disposables.pop();
+            if (x) {
+                x.dispose();
+            }
+        }
+    }
+
+    private _update() {
+        this._panel.webview.html = this._getHtmlForWebview();
+
+        // Send initial data after a brief delay to ensure webview is ready
+        setTimeout(() => {
+            this.sendConversationsList();
+            this.sendCurrentMessages();
+        }, 100);
     }
 
     private getNonce() {
@@ -310,7 +331,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         return text;
     }
 
-    private _getHtmlForWebview(webview: vscode.Webview): string {
+    private _getHtmlForWebview(): string {
         const nonce = this.getNonce();
 
         return `<!DOCTYPE html>
@@ -777,8 +798,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
         function renderMarkdown(text) {
             let html = escapeHtml(text);
-            html = html.replace(/\\\`\\\`\\\`([\\\\s\\\\S]*?)\\\`\\\`\\\`/g, '<pre><code>$1</code></pre>');
-            html = html.replace(/\\\`([^\\\`]+)\\\`/g, '<code>$1</code>');
+            html = html.replace(/\`\`\`([\\s\\S]*?)\`\`\`/g, '<pre><code>$1</code></pre>');
+            html = html.replace(/\`([^\`]+)\`/g, '<code>$1</code>');
             html = html.replace(/\\n/g, '<br>');
             return html;
         }
@@ -822,11 +843,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             conversations = convs;
             currentConversationId = currentId;
 
-            // Update dropdown title
             const current = convs.find(c => c.id === currentId);
             currentConversationTitle.textContent = current ? current.title : 'Past Conversations';
 
-            // Update dropdown menu
             if (convs.length === 0) {
                 noConversations.style.display = 'block';
                 dropdownMenu.querySelectorAll('.dropdown-item').forEach(el => el.remove());
@@ -858,7 +877,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             }
         }
 
-        // Auto-resize textarea
         messageInput.addEventListener('input', () => {
             messageInput.style.height = 'auto';
             messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
@@ -873,13 +891,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             }
         });
 
-        // Dropdown toggle
         dropdownTrigger.addEventListener('click', () => {
             dropdownMenu.classList.toggle('open');
             dropdownArrow.classList.toggle('open');
         });
 
-        // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.conversations-dropdown')) {
                 dropdownMenu.classList.remove('open');
@@ -887,7 +903,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             }
         });
 
-        // New chat button
         newChatBtn.addEventListener('click', () => {
             vscode.postMessage({ type: 'newConversation' });
         });
@@ -929,7 +944,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             }
         });
 
-        // Request initial data
         vscode.postMessage({ type: 'getConversations' });
 
         messageInput.focus();

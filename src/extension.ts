@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 import { OllamaClient } from './ollamaClient';
 import { OllamaCompletionProvider } from './completionProvider';
 import { ChatViewProvider } from './chat/chatViewProvider';
+import { ChatPanel } from './chat/chatPanel';
 
 let ollamaClient: OllamaClient;
 let chatViewProvider: ChatViewProvider;
@@ -55,6 +56,14 @@ export function activate(context: vscode.ExtensionContext) {
     // Register commands
     context.subscriptions.push(
         vscode.commands.registerCommand('ollama.openChat', () => {
+            // Open as panel (can be docked next to Claude Code)
+            ChatPanel.createOrShow(context.extensionUri, ollamaClient, context);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ollama.openChatSidebar', () => {
+            // Open in sidebar (original behavior)
             vscode.commands.executeCommand('workbench.view.extension.ollama-sidebar');
         })
     );
