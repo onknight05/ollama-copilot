@@ -44,20 +44,19 @@ Ollama Copilot for VS Code: Harness the power of Ollama with autocomplete and ch
 
 This extension provides several configuration options. Open VS Code settings (File > Preferences > Settings) and search for "Ollama":
 
-- `ollama.baseUrl`: Ollama API base URL (default: `http://localhost:11434`)
-- `ollama.model`: Model to use for code completion (default: `codellama`)
-- `ollama.chatModel`: Model to use for chat (default: `codellama`)
-- `ollama.autocompleteEnabled`: Enable/disable autocomplete suggestions (default: `true`)
-- `ollama.maxTokens`: Maximum tokens for code completion (default: `100`)
-- `ollama.temperature`: Temperature for generation (default: `0.2`)
-- `ollama.debounceMs`: Debounce delay before triggering autocomplete (default: `300`)
+- `ollama-copilot.baseUrl`: Ollama API base URL (default: `http://localhost:11434`)
+- `ollama-copilot.model`: Model to use for code completion (default: `codellama`)
+- `ollama-copilot.chatModel`: Model to use for chat (default: `codellama`)
+- `ollama-copilot.autocompleteEnabled`: Enable/disable autocomplete suggestions (default: `true`)
+- `ollama-copilot.maxTokens`: Maximum tokens for code completion (default: `100`)
+- `ollama-copilot.temperature`: Temperature for generation (default: `0.2`)
+- `ollama-copilot.debounceMs`: Debounce delay before triggering autocomplete (default: `300`)
 
 ## Commands
 
 This extension contributes the following commands:
 
 - `Ollama: Open Chat` - Open the chat panel
-- `Ollama: Clear Chat History` - Clear the current chat conversation
 - `Ollama: Toggle Autocomplete` - Enable/disable autocomplete functionality
 
 ## Usage
@@ -95,8 +94,8 @@ All processing happens locally on your machine through Ollama. No code or data i
 
 - Verify Ollama is running: `ollama list`
 - Check the configured model is installed
-- Ensure `ollama.autocompleteEnabled` is set to `true`
-- Try increasing `ollama.debounceMs` if suggestions appear too quickly
+- Ensure `ollama-copilot.autocompleteEnabled` is set to `true`
+- Try increasing `ollama-copilot.debounceMs` if suggestions appear too quickly
 
 ### Chat not responding
 
@@ -108,7 +107,7 @@ All processing happens locally on your machine through Ollama. No code or data i
 ### Connection errors
 
 - Ensure Ollama is running on the configured port (default: 11434)
-- Verify the base URL in settings: `ollama.baseUrl`
+- Verify the base URL in settings: `ollama-copilot.baseUrl`
 - Check firewall settings if using a custom configuration
 
 ## Contributing

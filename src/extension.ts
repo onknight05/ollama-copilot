@@ -4,15 +4,13 @@ import * as vscode from 'vscode';
 
 import { OllamaClient } from './ollamaClient';
 import { OllamaCompletionProvider } from './completionProvider';
-import { ChatViewProvider } from './chat/chatViewProvider';
 import { ChatPanel } from './chat/chatPanel';
 
 let ollamaClient: OllamaClient;
-let chatViewProvider: ChatViewProvider;
 let statusBarItem: vscode.StatusBarItem;
 
 function updateStatusBar() {
-    const config = vscode.workspace.getConfiguration('ollama');
+    const config = vscode.workspace.getConfiguration('ollama-copilot');
     const isEnabled = config.get<boolean>('autocompleteEnabled') !== false;
 
     if (isEnabled) {
@@ -50,15 +48,6 @@ export function activate(context: vscode.ExtensionContext) {
         dispose: () => completionProvider.dispose()
     });
 
-    // Register chat view provider
-    chatViewProvider = new ChatViewProvider(context.extensionUri, ollamaClient, context);
-    context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider(
-            ChatViewProvider.viewType,
-            chatViewProvider
-        )
-    );
-
     // registerCommand
     // The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
@@ -71,34 +60,13 @@ export function activate(context: vscode.ExtensionContext) {
     // Register commands
     context.subscriptions.push(
         vscode.commands.registerCommand('ollama.openChat', () => {
-            // Open as panel (can be docked next to Claude Code)
             ChatPanel.createOrShow(context.extensionUri, ollamaClient, context);
         })
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('ollama.openChatSidebar', () => {
-            // Open in sidebar (original behavior)
-            vscode.commands.executeCommand('workbench.view.extension.ollama-sidebar');
-        })
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('ollama.clearChat', () => {
-            chatViewProvider.clearChat();
-            vscode.window.showInformationMessage('Chat history cleared');
-        })
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('ollama.newConversation', () => {
-            chatViewProvider.newConversation();
-        })
-    );
-
-    context.subscriptions.push(
         vscode.commands.registerCommand('ollama.toggleAutocomplete', async () => {
-            const config = vscode.workspace.getConfiguration('ollama');
+            const config = vscode.workspace.getConfiguration('ollama-copilot');
             const currentValue = config.get<boolean>('autocompleteEnabled') !== false;
             await config.update('autocompleteEnabled', !currentValue, vscode.ConfigurationTarget.Global);
             updateStatusBar();
@@ -107,7 +75,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('ollama.enableAutocomplete', async () => {
-            const config = vscode.workspace.getConfiguration('ollama');
+            const config = vscode.workspace.getConfiguration('ollama-copilot');
             await config.update('autocompleteEnabled', true, vscode.ConfigurationTarget.Global);
             updateStatusBar();
         })
@@ -115,7 +83,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('ollama.disableAutocomplete', async () => {
-            const config = vscode.workspace.getConfiguration('ollama');
+            const config = vscode.workspace.getConfiguration('ollama-copilot');
             await config.update('autocompleteEnabled', false, vscode.ConfigurationTarget.Global);
             updateStatusBar();
         })
@@ -123,7 +91,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('ollama.showMenu', async () => {
-            const config = vscode.workspace.getConfiguration('ollama');
+            const config = vscode.workspace.getConfiguration('ollama-copilot');
             const isEnabled = config.get<boolean>('autocompleteEnabled') !== false;
 
             interface MenuItem extends vscode.QuickPickItem {
@@ -161,7 +129,7 @@ export function activate(context: vscode.ExtensionContext) {
                 } else if (selection?.action === 'chat') {
                     vscode.commands.executeCommand('ollama.openChat');
                 } else if (selection?.action === 'settings') {
-                    vscode.commands.executeCommand('workbench.action.openSettings', 'ollama');
+                    vscode.commands.executeCommand('workbench.action.openSettings', 'ollama-copilot');
                 }
             });
 
@@ -180,7 +148,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Listen for configuration changes
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration('ollama.autocompleteEnabled')) {
+            if (e.affectsConfiguration('ollama-copilot.autocompleteEnabled')) {
                 updateStatusBar();
             }
         })

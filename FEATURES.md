@@ -69,13 +69,13 @@ Extensive settings for customization:
 
 | Setting | Purpose | Default |
 |---------|---------|---------|
-| `ollama.baseUrl` | Ollama API endpoint | `http://localhost:11434` |
-| `ollama.model` | Autocomplete model | `codellama` |
-| `ollama.chatModel` | Chat model | `codellama` |
-| `ollama.autocompleteEnabled` | Toggle autocomplete | `true` |
-| `ollama.maxTokens` | Max completion length | `100` |
-| `ollama.temperature` | Generation creativity | `0.2` |
-| `ollama.debounceMs` | Suggestion delay | `300ms` |
+| `ollama-copilot.baseUrl` | Ollama API endpoint | `http://localhost:11434` |
+| `ollama-copilot.model` | Autocomplete model | `codellama` |
+| `ollama-copilot.chatModel` | Chat model | `codellama` |
+| `ollama-copilot.autocompleteEnabled` | Toggle autocomplete | `true` |
+| `ollama-copilot.maxTokens` | Max completion length | `100` |
+| `ollama-copilot.temperature` | Generation creativity | `0.2` |
+| `ollama-copilot.debounceMs` | Suggestion delay | `300ms` |
 
 ### Commands
 

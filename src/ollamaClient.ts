@@ -55,7 +55,7 @@ export class OllamaClient {
 
         // Update client when configuration changes
         this.disposable = vscode.workspace.onDidChangeConfiguration((e) => {
-            if (e.affectsConfiguration('ollama.baseUrl')) {
+            if (e.affectsConfiguration('ollama-copilot.baseUrl')) {
                 this.baseUrl = this.getBaseUrl();
                 this.client.defaults.baseURL = this.baseUrl;
             }
@@ -67,7 +67,7 @@ export class OllamaClient {
     }
 
     private getBaseUrl(): string {
-        const config = vscode.workspace.getConfiguration('ollama');
+        const config = vscode.workspace.getConfiguration('ollama-copilot');
         return config.get<string>('baseUrl') || 'http://localhost:11434';
     }
 

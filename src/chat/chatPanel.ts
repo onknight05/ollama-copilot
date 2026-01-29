@@ -246,7 +246,7 @@ export class ChatPanel {
         });
 
         try {
-            const config = vscode.workspace.getConfiguration('ollama');
+            const config = vscode.workspace.getConfiguration('ollama-copilot');
             const chatModel = config.get<string>('chatModel') || 'codellama';
             const temperature = config.get<number>('temperature') || 0.2;
 

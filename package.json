@@ -32,40 +32,27 @@
     "commands": [
       {
         "command": "ollama.openChat",
-        "title": "Ollama: Open Chat (Panel)",
+        "title": "Ollama Copilot: Open Chat",
         "icon": {
           "light": "resources/icon.svg",
           "dark": "resources/icon.svg"
         }
       },
       {
-        "command": "ollama.openChatSidebar",
-        "title": "Ollama: Open Chat (Sidebar)",
-        "icon": "$(comment-discussion)"
-      },
-      {
-        "command": "ollama.clearChat",
-        "title": "Ollama: Clear Chat History"
-      },
-      {
-        "command": "ollama.newConversation",
-        "title": "Ollama: New Conversation"
+        "command": "ollama.showMenu",
+        "title": "Ollama Copilot: Show Menu"
       },
       {
         "command": "ollama.toggleAutocomplete",
-        "title": "Ollama: Toggle Autocomplete"
-      },
-      {
-        "command": "ollama.showMenu",
-        "title": "Ollama: Show Menu"
+        "title": "Ollama Copilot: Toggle Autocomplete"
       },
       {
         "command": "ollama.enableAutocomplete",
-        "title": "Enable Completions"
+        "title": "Ollama Copilot: Enable Completions"
       },
       {
         "command": "ollama.disableAutocomplete",
-        "title": "Disable Completions"
+        "title": "Ollama Copilot: Disable Completions"
       }
     ],
     "submenus": [
@@ -74,24 +61,6 @@
         "label": "Ollama Copilot"
       }
     ],
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "ollama-sidebar",
-          "title": "Ollama Copilot",
-          "icon": "resources/icon.svg"
-        }
-      ]
-    },
-    "views": {
-      "ollama-sidebar": [
-        {
-          "type": "webview",
-          "id": "ollama-chat-view",
-          "name": "Chat"
-        }
-      ]
-    },
     "menus": {
       "editor/title": [
         {
@@ -104,65 +73,53 @@
         {
           "command": "ollama.enableAutocomplete",
           "group": "1_status",
-          "when": "!config.ollama.autocompleteEnabled"
+          "when": "!config.ollama-copilot.autocompleteEnabled"
         },
         {
           "command": "ollama.disableAutocomplete",
           "group": "1_status",
-          "when": "config.ollama.autocompleteEnabled"
+          "when": "config.ollama-copilot.autocompleteEnabled"
         },
         {
           "command": "ollama.openChat",
           "group": "2_actions"
-        },
-        {
-          "command": "ollama.openChatSidebar",
-          "group": "2_actions"
-        },
-        {
-          "command": "ollama.newConversation",
-          "group": "2_actions"
-        },
-        {
-          "command": "ollama.clearChat",
-          "group": "3_manage"
         }
       ]
     },
     "configuration": {
       "title": "Ollama Copilot",
       "properties": {
-        "ollama.baseUrl": {
+        "ollama-copilot.baseUrl": {
           "type": "string",
           "default": "http://localhost:11434",
           "description": "Ollama API base URL"
         },
-        "ollama.model": {
+        "ollama-copilot.model": {
           "type": "string",
           "default": "codellama",
           "description": "Ollama model to use for code completion"
         },
-        "ollama.chatModel": {
+        "ollama-copilot.chatModel": {
           "type": "string",
           "default": "codellama",
           "description": "Ollama model to use for chat"
         },
-        "ollama.autocompleteEnabled": {
+        "ollama-copilot.autocompleteEnabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable/disable autocomplete suggestions"
         },
-        "ollama.maxTokens": {
+        "ollama-copilot.maxTokens": {
           "type": "number",
           "default": 100,
           "description": "Maximum number of tokens for code completion"
         },
-        "ollama.temperature": {
+        "ollama-copilot.temperature": {
           "type": "number",
-          "default": 0.2,
+          "default": 0.4,
           "description": "Temperature for code generation (0.0-1.0)"
         },
-        "ollama.debounceMs": {
+        "ollama-copilot.debounceMs": {
           "type": "number",
           "default": 300,
           "description": "Debounce delay in milliseconds before triggering autocomplete"

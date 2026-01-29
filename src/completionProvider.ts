@@ -13,7 +13,7 @@ export class OllamaCompletionProvider implements vscode.InlineCompletionItemProv
         this.updateDebounce();
 
         this.disposable = vscode.workspace.onDidChangeConfiguration((e) => {
-            if (e.affectsConfiguration('ollama.debounceMs')) {
+            if (e.affectsConfiguration('ollama-copilot.debounceMs')) {
                 this.updateDebounce();
             }
         });
@@ -24,12 +24,12 @@ export class OllamaCompletionProvider implements vscode.InlineCompletionItemProv
     }
 
     private updateDebounce() {
-        const config = vscode.workspace.getConfiguration('ollama');
+        const config = vscode.workspace.getConfiguration('ollama-copilot');
         this.debounceMs = config.get<number>('debounceMs') || 300;
     }
 
     private isAutocompleteEnabled(): boolean {
-        const config = vscode.workspace.getConfiguration('ollama');
+        const config = vscode.workspace.getConfiguration('ollama-copilot');
         return config.get<boolean>('autocompleteEnabled') !== false;
     }
 
@@ -69,7 +69,7 @@ export class OllamaCompletionProvider implements vscode.InlineCompletionItemProv
             );
 
             // Get configuration
-            const config = vscode.workspace.getConfiguration('ollama');
+            const config = vscode.workspace.getConfiguration('ollama-copilot');
             const model = config.get<string>('model') || 'codellama';
             const maxTokens = config.get<number>('maxTokens') || 10000;
             const temperature = config.get<number>('temperature') || 0.2;

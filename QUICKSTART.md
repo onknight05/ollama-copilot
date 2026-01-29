@@ -44,7 +44,7 @@ You should see your installed models.
 2. Start typing a function:
    ```python
    def calculate_sum(a, b):
-       # 
+       #
    ```
 3. Wait for ghost text to appear
 4. Press Tab to accept
@@ -60,27 +60,27 @@ You should see your installed models.
 Access settings via File → Preferences → Settings, then search for "Ollama":
 
 **Essential Settings:**
-- `ollama.baseUrl`: Where Ollama is running (default: `http://localhost:11434`)
-- `ollama.model`: Model for autocomplete (default: `codellama`)
-- `ollama.chatModel`: Model for chat (default: `codellama`)
+- `ollama-copilot.baseUrl`: Where Ollama is running (default: `http://localhost:11434`)
+- `ollama-copilot.model`: Model for autocomplete (default: `codellama`)
+- `ollama-copilot.chatModel`: Model for chat (default: `codellama`)
 
 **Advanced Settings:**
-- `ollama.autocompleteEnabled`: Toggle autocomplete on/off
-- `ollama.temperature`: Creativity (0.0-1.0, lower = more focused)
-- `ollama.maxTokens`: Max completion length
-- `ollama.debounceMs`: Delay before suggestions
+- `ollama-copilot.autocompleteEnabled`: Toggle autocomplete on/off
+- `ollama-copilot.temperature`: Creativity (0.0-1.0, lower = more focused)
+- `ollama-copilot.maxTokens`: Max completion length
+- `ollama-copilot.debounceMs`: Delay before suggestions
 
 ## Troubleshooting
 
 ### No autocomplete suggestions?
 - Check Ollama is running: `ollama list`
-- Verify `ollama.autocompleteEnabled` is `true`
+- Verify `ollama-copilot.autocompleteEnabled` is `true`
 - Check the model is installed: `ollama list`
 - Look for errors in Output → Ollama Copilot
 
 ### Chat not responding?
 - Verify Ollama is running on port 11434
-- Check `ollama.baseUrl` matches your setup
+- Check `ollama-copilot.baseUrl` matches your setup
 - Look for error messages in the chat panel
 - Check Developer Tools (Help → Toggle Developer Tools)
 
@@ -124,7 +124,6 @@ Access settings via File → Preferences → Settings, then search for "Ollama":
 Access via Command Palette (Ctrl+Shift+P / Cmd+Shift+P):
 
 - `Ollama: Open Chat` - Open the chat sidebar
-- `Ollama: Clear Chat History` - Start fresh conversation
 - `Ollama: Toggle Autocomplete` - Enable/disable autocomplete
 
 ## Next Steps
