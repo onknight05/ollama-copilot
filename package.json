@@ -54,6 +54,24 @@
       {
         "command": "ollama.toggleAutocomplete",
         "title": "Ollama: Toggle Autocomplete"
+      },
+      {
+        "command": "ollama.showMenu",
+        "title": "Ollama: Show Menu"
+      },
+      {
+        "command": "ollama.enableAutocomplete",
+        "title": "Enable Completions"
+      },
+      {
+        "command": "ollama.disableAutocomplete",
+        "title": "Disable Completions"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "ollama.statusBarMenu",
+        "label": "Ollama Copilot"
       }
     ],
     "viewsContainers": {
@@ -80,6 +98,34 @@
           "command": "ollama.openChat",
           "group": "navigation",
           "when": "editorFocus"
+        }
+      ],
+      "ollama.statusBarMenu": [
+        {
+          "command": "ollama.enableAutocomplete",
+          "group": "1_status",
+          "when": "!config.ollama.autocompleteEnabled"
+        },
+        {
+          "command": "ollama.disableAutocomplete",
+          "group": "1_status",
+          "when": "config.ollama.autocompleteEnabled"
+        },
+        {
+          "command": "ollama.openChat",
+          "group": "2_actions"
+        },
+        {
+          "command": "ollama.openChatSidebar",
+          "group": "2_actions"
+        },
+        {
+          "command": "ollama.newConversation",
+          "group": "2_actions"
+        },
+        {
+          "command": "ollama.clearChat",
+          "group": "3_manage"
         }
       ]
     },
