@@ -6,3 +6,5 @@ node_modules
 
 .local
 .env
+.DS_Store
+*.log

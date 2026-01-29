@@ -1,40 +1,129 @@
 {
   "name": "ollama-copilot",
   "displayName": "Ollama Copilot",
-  "description": "Ollama Copilot for VS Code: Harness the power of Ollama with autocomplte and chat without leaving VS Code",
+  "description": "Ollama Copilot for VS Code: Harness the power of Ollama with autocomplete and chat without leaving VS Code",
   "version": "0.0.1",
+  "publisher": "ollama",
   "engines": {
-    "vscode": "^1.108.1"
+    "vscode": "^1.70.0"
   },
   "categories": [
+    "Programming Languages",
+    "Machine Learning",
     "Other"
   ],
-  "activationEvents": [],
+  "keywords": [
+    "vscode",
+    "ollama",
+    "copilot",
+    "gpt",
+    "ai",
+    "llm",
+    "autocomplete",
+    "chat",
+    "code completion",
+    "coding"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "ollama-copilot.helloWorld",
-        "title": "Hello World"
+        "command": "ollama.openChat",
+        "title": "Ollama: Open Chat",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "ollama.clearChat",
+        "title": "Ollama: Clear Chat History"
+      },
+      {
+        "command": "ollama.toggleAutocomplete",
+        "title": "Ollama: Toggle Autocomplete"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ollama-sidebar",
+          "title": "Ollama Copilot",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "ollama-sidebar": [
+        {
+          "type": "webview",
+          "id": "ollama-chat-view",
+          "name": "Chat"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Ollama Copilot",
+      "properties": {
+        "ollama.baseUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Ollama API base URL"
+        },
+        "ollama.model": {
+          "type": "string",
+          "default": "codellama",
+          "description": "Ollama model to use for code completion"
+        },
+        "ollama.chatModel": {
+          "type": "string",
+          "default": "codellama",
+          "description": "Ollama model to use for chat"
+        },
+        "ollama.autocompleteEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable autocomplete suggestions"
+        },
+        "ollama.maxTokens": {
+          "type": "number",
+          "default": 100,
+          "description": "Maximum number of tokens for code completion"
+        },
+        "ollama.temperature": {
+          "type": "number",
+          "default": 0.2,
+          "description": "Temperature for code generation (0.0-1.0)"
+        },
+        "ollama.debounceMs": {
+          "type": "number",
+          "default": 300,
+          "description": "Debounce delay in milliseconds before triggering autocomplete"
+        }
+      }
+    }
   },
   "scripts": {
-    "vscode:prepublish": "pnpm run compile",
+    "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "pnpm run compile && pnpm run lint",
-    "lint": "eslint src",
+    "lint": "eslint src --ext ts",
+    "pretest": "npm run compile && npm run lint",
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.108.1",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "22.x",
-    "typescript-eslint": "^8.52.0",
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.70.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^9.39.2",
     "typescript": "^5.9.3",
+    "@types/mocha": "^10.0.10",
+    "typescript-eslint": "^8.52.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2"
+  },
+  "dependencies": {
+    "axios": "^1.12.0"
   }
 }

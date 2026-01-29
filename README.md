@@ -1,71 +1,126 @@
-# ollama-copilot README
+# Ollama Copilot
 
-This is the README for your extension "ollama-copilot". After writing up a brief description, we recommend including the following sections.
+Ollama Copilot for VS Code: Harness the power of Ollama with autocomplete and chat without leaving VS Code
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+### 🚀 Intelligent Code Autocomplete
+- Get AI-powered code suggestions as you type
+- Supports multiple programming languages
+- Configurable debouncing and model selection
+- Can be enabled/disabled on demand
 
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+### 💬 Interactive Chat Interface
+- Built-in chat panel in the VS Code sidebar
+- Ask questions about code, get explanations, and solve problems
+- Maintains conversation history during your session
+- Uses your local Ollama models for complete privacy
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- [Ollama](https://ollama.ai/) must be installed and running on your system
+- At least one code-capable model installed (e.g., `codellama`, `deepseek-coder`, `starcoder2`)
 
-## Extension Settings
+### Installing Ollama
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+1. Download and install Ollama from [https://ollama.ai/](https://ollama.ai/)
+2. Install a code model:
+   ```bash
+   ollama pull codellama
+   ```
+3. Verify Ollama is running:
+   ```bash
+   ollama list
+   ```
 
-For example:
+## Installation
 
-This extension contributes the following settings:
+1. Install the extension from the VS Code Marketplace
+2. Ensure Ollama is running
+3. Open any code file and start typing to see autocomplete suggestions
+4. Click the Ollama icon in the activity bar to open the chat panel
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+## Configuration
 
-## Known Issues
+This extension provides several configuration options. Open VS Code settings (File > Preferences > Settings) and search for "Ollama":
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- `ollama.baseUrl`: Ollama API base URL (default: `http://localhost:11434`)
+- `ollama.model`: Model to use for code completion (default: `codellama`)
+- `ollama.chatModel`: Model to use for chat (default: `codellama`)
+- `ollama.autocompleteEnabled`: Enable/disable autocomplete suggestions (default: `true`)
+- `ollama.maxTokens`: Maximum tokens for code completion (default: `100`)
+- `ollama.temperature`: Temperature for generation (default: `0.2`)
+- `ollama.debounceMs`: Debounce delay before triggering autocomplete (default: `300`)
 
-## Release Notes
+## Commands
 
-Users appreciate release notes as you update your extension.
+This extension contributes the following commands:
 
-### 1.0.0
+- `Ollama: Open Chat` - Open the chat panel
+- `Ollama: Clear Chat History` - Clear the current chat conversation
+- `Ollama: Toggle Autocomplete` - Enable/disable autocomplete functionality
 
-Initial release of ...
+## Usage
 
-### 1.0.1
+### Code Autocomplete
 
-Fixed issue #.
+1. Start typing in any file
+2. Wait for the autocomplete suggestion to appear (ghost text)
+3. Press `Tab` to accept the suggestion
+4. Press `Esc` to dismiss it
 
-### 1.1.0
+### Chat Panel
 
-Added features X, Y, and Z.
+1. Click the Ollama icon in the activity bar (or run "Ollama: Open Chat" command)
+2. Type your question in the input box
+3. Press Enter or click Send
+4. View the AI's response in the chat history
 
----
+## Supported Languages
 
-## Following extension guidelines
+The extension works with all programming languages supported by VS Code. For best results, use models trained on code like:
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+- `codellama` - Meta's Code Llama
+- `deepseek-coder` - DeepSeek Coder
+- `starcoder2` - StarCoder 2
+- `phind-codellama` - Phind's fine-tuned Code Llama
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+## Privacy
 
-## Working with Markdown
+All processing happens locally on your machine through Ollama. No code or data is sent to external servers.
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+## Troubleshooting
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+### Autocomplete not working
 
-## For more information
+- Verify Ollama is running: `ollama list`
+- Check the configured model is installed
+- Ensure `ollama.autocompleteEnabled` is set to `true`
+- Try increasing `ollama.debounceMs` if suggestions appear too quickly
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+### Chat not responding
 
-**Enjoy!**
+- Verify Ollama is running
+- Check the base URL in settings matches your Ollama installation
+- Look for error messages in the chat panel
+- Check VS Code Developer Console (Help > Toggle Developer Tools) for errors
+
+### Connection errors
+
+- Ensure Ollama is running on the configured port (default: 11434)
+- Verify the base URL in settings: `ollama.baseUrl`
+- Check firewall settings if using a custom configuration
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+MIT
+
+## Acknowledgments
+
+- Built with [Ollama](https://ollama.ai/)
+- Inspired by GitHub Copilot and other AI coding assistants
+
